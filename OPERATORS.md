@@ -8,9 +8,9 @@ Gravit or Coffer systems.
 ## 1. Re-run
 
 ```bash
-git clone <this repository> && cd gravit-coffer-verification
+git clone https://github.com/gon-foundation/gravit-coffer-verification.git && cd gravit-coffer-verification
 python3.12 -m venv .venv
-git clone --depth 1 --branch v0.6.0 https://github.com/gravit-open-network-foundation/verifier.git .deps/verifier
+git clone --depth 1 --branch v0.6.0 https://github.com/gon-foundation/verifier.git .deps/verifier
 .venv/bin/pip install -e .deps/verifier pytest
 .venv/bin/python -m pytest -q                       # adversarial and math tests
 for d in evidence/*/; do [ -f "$d/transactions.jsonl.gz" ] && .venv/bin/python -m coffer_verify.run verify "$(basename "$d")"; done
