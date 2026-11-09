@@ -42,18 +42,21 @@ def bundle_digest() -> str:
 
 def regenerate_and_compare() -> dict:
     """Re-run every pool from evidence; fail if any result byte differs. Returns totals."""
-    from .run import verify
+    import subprocess
 
     before = {p: p.read_bytes() for p in (ROOT / "results").rglob("*") if p.is_file()}
     for d in sorted((ROOT / "evidence").iterdir()):
         if (d / "transactions.jsonl.gz").exists():
-            verify(d.name)
+            # One process per pool: run.py picks the program version (v5 or v6) from the
+            # pool's account.json when it is started, as in OPERATORS.md step 1.
+            subprocess.run([sys.executable, "-m", "coffer_verify.run", "verify", d.name], cwd=ROOT, check=True,
+                           stdout=subprocess.DEVNULL)
     after = {p: p.read_bytes() for p in (ROOT / "results").rglob("*") if p.is_file()}
     if before != after:
         changed = sorted(str(p.relative_to(ROOT)) for p in set(before) | set(after) if before.get(p) != after.get(p))
         sys.exit(f"results differ from the committed ones, refusing to sign: {changed}")
     totals = {"VERIFIED": 0, "INVALID": 0, "CONFLICTING": 0, "INSUFFICIENT": 0, "NOT_APPLICABLE": 0}
-    for f in (ROOT / "results").glob("*/*.jsonl"):
+    for f in (ROOT / "results").glob("*/records.jsonl"):
         for line in f.read_text().splitlines():
             for o in json.loads(line)["record"]["obligations"]:
                 totals[o["result"]] += 1
